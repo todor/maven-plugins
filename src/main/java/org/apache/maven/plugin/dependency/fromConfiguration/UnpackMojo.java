@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Goal that retrieves a list of artifacts from the repository and unpacks them in a defined location.
@@ -103,11 +104,12 @@ public class UnpackMojo
         verifyRequirements();
 
         List<ArtifactItem> processedItems = getProcessedArtifactItems( false );
-        purgeOutputDirectories(processedItems);
+        Set<String> purgedOutputDirectories = purgeOutputDirectories(processedItems);
 
         for ( ArtifactItem artifactItem : processedItems )
         {
-            if ( artifactItem.isNeedsProcessing() )
+            if ( artifactItem.isNeedsProcessing()
+                    || purgedOutputDirectories.contains(artifactItem.getOutputDirectory().getAbsolutePath()) )
             {
                 unpackArtifact( artifactItem );
             }
@@ -153,9 +155,10 @@ public class UnpackMojo
      * Purges the output directories of the input artifact items which require purging.
      *
      * @param artifactItems the artifact items whose output directories should be purged
+     * @return a {@link Set} with the paths of all purged output directories
      * @throws MojoExecutionException in case of an error while purging the required output directories
      */
-    private void purgeOutputDirectories(
+    private Set<String> purgeOutputDirectories(
             List<ArtifactItem> artifactItems)
             throws MojoExecutionException {
         Map<String, Boolean> purgeFlagsByOutputDirectory = getPurgeFlagsByOutputDirectory(artifactItems);
@@ -174,6 +177,8 @@ public class UnpackMojo
                 purgedOutputDirectories.add(outputDirectoryPath);
             }
         }
+
+        return purgedOutputDirectories;
     }
 
     /**
